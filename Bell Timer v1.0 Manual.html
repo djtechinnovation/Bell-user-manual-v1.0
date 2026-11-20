@@ -1,0 +1,656 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bell Timer v1.0 Manual</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=VT323&display=swap">
+<style>
+/* Layout: one manual column with a sticky contents list on wide screens; LCD screens drawn as 16x2 character grids */
+:root{
+  --bg:#f3f6f9; --surface:#ffffff; --fg:#152030; --muted:#566377; --line:#d6dee8;
+  --accent:#1c58c7; --accent-soft:#e3ecfb; --warn:#9a5b00; --warn-soft:#fdf1dc;
+  --ok:#1d7a46; --bad:#b3261e;
+  --lcd-bezel:#26303b; --lcd-bg:#8fb236; --lcd-cell:#9dbf43; --lcd-ink:#1b2a0c;
+  --btn:#2b3644; --btn-fg:#f3f6f9; --btn-menu:#c0392b;
+  --f-head:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Inter", "Segoe UI", system-ui, sans-serif;
+  --f-lcd:"VT323", "Consolas", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --surface:#151d27; --fg:#e5ebf2; --muted:#9aa8ba; --line:#283444;
+  --accent:#78a6ff; --accent-soft:#1a2a45; --warn:#f0b45a; --warn-soft:#33270f;
+  --ok:#5fd08f; --bad:#ff8a80; --lcd-bezel:#0a0f14; --btn:#3a4757; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --surface:#151d27; --fg:#e5ebf2; --muted:#9aa8ba; --line:#283444;
+  --accent:#78a6ff; --accent-soft:#1a2a45; --warn:#f0b45a; --warn-soft:#33270f;
+  --ok:#5fd08f; --bad:#ff8a80; --lcd-bezel:#0a0f14; --btn:#3a4757; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:40px 32px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(30px,5vw,44px);margin-top:6px}
+h2{font-size:26px}
+h3{font-size:19px}
+.lead{max-width:60ch;color:var(--muted);margin:12px 0 0;font-size:17px}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;padding:0;list-style:none}
+.facts li{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:14px;background:var(--bg)}
+.facts b{font-variant-numeric:tabular-nums}
+
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px;padding-block:40px 80px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;font-size:14px}
+nav.toc ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px}
+nav.toc a{display:block;padding:4px 10px;border-radius:6px;color:var(--fg);text-decoration:none}
+nav.toc a:hover{background:var(--accent-soft)}
+nav.toc .n{display:inline-block;width:24px;color:var(--muted);font-variant-numeric:tabular-nums}
+main{min-width:0;display:grid;gap:56px}
+section{display:grid;gap:16px;scroll-margin-top:24px}
+section > p, section li, .box p{max-width:68ch}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.sec-head{display:flex;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px}
+.sec-head .num{font-family:var(--f-head);color:var(--accent);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+
+/* Buttons as small keycaps */
+kbd.b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;padding:0 8px;border-radius:13px;
+  background:var(--btn);color:var(--btn-fg);font:600 13px/1 var(--f-body);letter-spacing:.04em;vertical-align:1px}
+kbd.b.m{background:var(--btn-menu);color:#fff}
+
+/* LCD */
+.lcd{background:var(--lcd-bezel);border-radius:10px;padding:10px;width:100%;max-width:380px}
+.screen{container-type:inline-size;background:var(--lcd-bg);border-radius:4px;padding:6px;display:grid;gap:3px}
+.row{display:grid;grid-template-columns:repeat(16,1fr);gap:2px}
+.c{background:var(--lcd-cell);color:var(--lcd-ink);font-family:var(--f-lcd);font-size:9.6cqw;line-height:1;aspect-ratio:5/8;
+  display:flex;align-items:center;justify-content:center;position:relative;border-radius:1px}
+.c.cur::after{content:"";position:absolute;left:10%;right:10%;bottom:6%;height:9%;background:var(--lcd-ink);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){.c.cur::after{animation:none}}
+figure{margin:0;display:grid;gap:8px}
+figcaption{font-size:14px;color:var(--muted)}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+
+/* Steps */
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:10px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start}
+ol.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);
+  font:700 13px/23px var(--f-head);text-align:center;margin-top:1px}
+
+.box{border-radius:10px;padding:14px 16px;display:grid;gap:6px;border:1px solid var(--line);background:var(--surface)}
+.box.warn{background:var(--warn-soft);border-color:transparent}
+.box.warn strong:first-child{color:var(--warn)}
+.box.tip{background:var(--accent-soft);border-color:transparent}
+.box.tip strong:first-child{color:var(--accent)}
+
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:24px;align-items:start}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+td.num,th.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+code,.mono{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+.tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 8px;background:var(--warn-soft);color:var(--warn)}
+
+.bellcard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:20px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);align-items:start}
+.bellcard h3 .k{color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* Map of the menu */
+.map{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.map span{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 10px;white-space:nowrap}
+.map span.home{background:var(--btn);color:var(--btn-fg);border-color:transparent}
+.map i{font-style:normal;color:var(--muted)}
+
+/* Simulator */
+.sim{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:20px;display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:24px;align-items:start}
+.panel{display:grid;gap:14px}
+.keys{display:flex;gap:12px;flex-wrap:wrap}
+.keys button{font:600 15px var(--f-body);border:0;border-radius:999px;height:48px;min-width:72px;padding:0 18px;background:var(--btn);color:var(--btn-fg);cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.keys button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.keys button.m{background:var(--btn-menu);color:#fff}
+.status{display:grid;gap:6px;font-size:14px}
+.status div{display:flex;gap:8px;flex-wrap:wrap}
+.status .lbl{color:var(--muted);min-width:96px}
+.lamp{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.lamp::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--line)}
+.lamp.on{color:var(--ok)}
+.lamp.on::before{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
+.toast{font-size:14px;color:var(--ok);min-height:22px;font-weight:600}
+.small{font-size:14px;color:var(--muted)}
+button.link{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-size:14px;cursor:pointer;text-decoration:underline}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:28px}
+  nav.toc{position:static}
+  nav.toc ol{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  header.top .wrap{grid-template-columns:minmax(0,1fr)}
+  .split,.bellcard,.sim{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">DJ Tech · User manual</div>
+      <h1>Bell Timer v1.0</h1>
+      <p class="lead">This guide shows how to set the date, the time and the school bells. Every step uses only the three buttons on the timer.</p>
+      <ul class="facts">
+        <li><b>15</b> bells</li>
+        <li><b>24-hour</b> clock</li>
+        <li>Choose days <b>Mon–Sun</b></li>
+        <li>Ring time <b>0–239</b> seconds or minutes</li>
+        <li><b>1</b> bell output (relay A)</li>
+      </ul>
+    </div>
+    <div class="lcd" data-l1="     DJ Tech" data-l2="Bell Timer v1.0" aria-label="Start screen: DJ Tech, Bell Timer v1.0"></div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow">Contents</div>
+    <ol>
+      <li><a href="#buttons"><span class="n">1</span>The buttons</a></li>
+      <li><a href="#home"><span class="n">2</span>Home screen</a></li>
+      <li><a href="#menu"><span class="n">3</span>How the menu works</a></li>
+      <li><a href="#date"><span class="n">4</span>Set the date</a></li>
+      <li><a href="#time"><span class="n">5</span>Set the time</a></li>
+      <li><a href="#bells"><span class="n">6</span>Set a bell</a></li>
+      <li><a href="#save"><span class="n">7</span>Save and exit</a></li>
+      <li><a href="#example"><span class="n">8</span>Example timetable</a></li>
+      <li><a href="#off"><span class="n">9</span>Turn a bell off</a></li>
+      <li><a href="#problems"><span class="n">10</span>Problems</a></li>
+      <li><a href="#limits"><span class="n">11</span>Limits</a></li>
+      <li><a href="#practice"><span class="n">12</span>Practice</a></li>
+      <li><a href="#tech"><span class="n">13</span>For technicians</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="buttons">
+      <div class="sec-head"><span class="num">1</span><h2>The buttons</h2></div>
+      <p>The timer has three buttons. Each button does one job when you <b>move between screens</b>, and another job when you <b>change a value</b>.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Button</th><th>Moving between screens</th><th>Changing a value (cursor is shown)</th></tr></thead>
+        <tbody>
+          <tr><td><kbd class="b m">MENU</kbd></td><td>On the home screen: opens the menu.<br>On a menu screen: starts changing values.</td><td>Goes to the next value. After the last value, the cursor goes away and changing is finished.</td></tr>
+          <tr><td><kbd class="b">−</kbd> (left)</td><td>Goes to the previous screen. On the <b>Date</b> screen it saves and goes home.</td><td>Makes the number smaller, or turns a <span class="mono">*</span> on/off.</td></tr>
+          <tr><td><kbd class="b">+</kbd> (right)</td><td>Goes to the next screen. On the <b>last</b> screen it saves and goes home.</td><td>Makes the number bigger, or turns a <span class="mono">*</span> on/off.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="box tip"><p><strong>Tip.</strong> Hold <kbd class="b">+</kbd> or <kbd class="b">−</kbd> down to change a number fast.</p></div>
+    </section>
+
+    <section id="home">
+      <div class="sec-head"><span class="num">2</span><h2>Home screen</h2></div>
+      <p>When you switch on the timer, it shows <b>DJ Tech / Bell Timer v1.0</b> for 5 seconds. Then the home screen opens.</p>
+      <div class="figs">
+        <figure>
+          <div class="lcd" data-l1="Fri     20.11.26" data-l2="    07:29:50"></div>
+          <figcaption>Normal. Top line: day name and date (day.month.year). Bottom line: time (hours:minutes:seconds).</figcaption>
+        </figure>
+        <figure>
+          <div class="lcd" data-l1="Fri     20.11.26" data-l2="07:30:03;A1 7s"></div>
+          <figcaption>A bell is ringing. <span class="mono">A1</span> means Bell 01 is ringing. <span class="mono">7s</span> means 7 seconds are left (<span class="mono">m</span> means minutes).</figcaption>
+        </figure>
+      </div>
+      <p>Bells ring only while the home screen is shown. They do not ring while the menu is open.</p>
+    </section>
+
+    <section id="menu">
+      <div class="sec-head"><span class="num">3</span><h2>How the menu works</h2></div>
+      <p>The menu is a list of screens. Press <kbd class="b">+</kbd> to go forward. Press <kbd class="b">−</kbd> to go back.</p>
+      <div class="map" aria-label="Order of the menu screens">
+        <span class="home">Home</span><i>→</i><span>Date</span><i>→</i><span>Time</span><i>→</i>
+        <span>Bell 01: time</span><i>→</i><span>Bell 01: days</span><i>→</i><span>Bell 01: duration</span><i>→</i><span>Bell 01: output</span><i>→</i>
+        <span>Bell 02 …</span><i>→ … →</i><span>Bell 15: output</span><i>→</i><span class="home">Home (saved)</span>
+      </div>
+      <p>There are 62 screens: Date, Time, then 4 screens for each of the 15 bells.</p>
+      <ol class="steps">
+        <li><span>Go to the screen you want with <kbd class="b">+</kbd> or <kbd class="b">−</kbd>.</span></li>
+        <li><span>Press <kbd class="b m">MENU</kbd>. A small blinking line (the <b>cursor</b>) shows under the first value.</span></li>
+        <li><span>Press <kbd class="b">+</kbd> or <kbd class="b">−</kbd> to change it.</span></li>
+        <li><span>Press <kbd class="b m">MENU</kbd> to go to the next value. Keep pressing until the cursor goes away.</span></li>
+        <li><span>Now <kbd class="b">+</kbd> and <kbd class="b">−</kbd> move between screens again.</span></li>
+      </ol>
+      <div class="box warn"><p><strong>Important.</strong> When the cursor is shown, <kbd class="b">+</kbd> and <kbd class="b">−</kbd> change the value. They do not move to another screen. Press <kbd class="b m">MENU</kbd> until the cursor goes away first.</p></div>
+    </section>
+
+    <section id="date">
+      <div class="sec-head"><span class="num">4</span><h2>Set the date</h2></div>
+      <div class="split">
+        <ol class="steps">
+          <li><span>On the home screen, press <kbd class="b m">MENU</kbd>. You see <b>Date</b>.</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. The cursor is under the <b>day</b>. Change it with <kbd class="b">+</kbd> / <kbd class="b">−</kbd> (1–31).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>month</b> (1–12).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>year</b>. Only 2 digits: <span class="mono">26</span> means 2026.</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. The cursor is after the day name. Choose the right <b>weekday</b> (Mon … Sun).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd> once more. The cursor goes away.</span></li>
+          <li><span>Press <kbd class="b">−</kbd> to save and go home. Or press <kbd class="b">+</kbd> to go on to the Time screen.</span></li>
+        </ol>
+        <figure>
+          <div class="lcd" data-l1="Date" data-l2="20.11.26 Fri" data-cur="1"></div>
+          <figcaption>Changing the day. The cursor moves: day → month → year → weekday.</figcaption>
+        </figure>
+      </div>
+      <div class="box warn">
+        <p><strong>Set the weekday yourself.</strong> The timer does not find the weekday from the date. The bells use the weekday to know if they should ring. If the weekday is wrong, the bells ring on the wrong days.</p>
+        <p>Example: 20.11.26 is a Friday, so choose <span class="mono">Fri</span>.</p>
+      </div>
+      <div class="box tip"><p><strong>Tip.</strong> The timer allows day 31 in every month. Check that the day is real for that month (for example, no 30 February).</p></div>
+    </section>
+
+    <section id="time">
+      <div class="sec-head"><span class="num">5</span><h2>Set the time</h2></div>
+      <div class="split">
+        <ol class="steps">
+          <li><span>On the home screen, press <kbd class="b m">MENU</kbd> (Date), then <kbd class="b">+</kbd>. You see <b>Time</b>.</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>hours</b> (0–23).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>minutes</b> (0–59).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>seconds</b> (0–59).</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd> once more. The cursor goes away.</span></li>
+          <li><span>Press <kbd class="b">−</kbd> (back to Date). Then press <kbd class="b">−</kbd> again to save and go home.</span></li>
+        </ol>
+        <figure>
+          <div class="lcd" data-l1="Time" data-l2="13:05:00" data-cur="4"></div>
+          <figcaption>Changing the minutes. The clock uses 24 hours: 13:05 is 1:05 PM.</figcaption>
+        </figure>
+      </div>
+      <div class="box tip">
+        <p><strong>How to set the exact time.</strong> The clock on this screen does not move while the menu is open. The new time is written when you go home.</p>
+        <ol class="steps">
+          <li><span>Set the time 1 minute ahead of the real time, with seconds <span class="mono">00</span>. Example: real time is 13:04:20, so set 13:05:00.</span></li>
+          <li><span>Press <kbd class="b m">MENU</kbd> until the cursor goes away. Press <kbd class="b">−</kbd> once. You are on the Date screen.</span></li>
+          <li><span>Watch a correct clock (for example your phone). At exactly 13:05:00, press <kbd class="b">−</kbd>.</span></li>
+        </ol>
+      </div>
+      <div class="box"><p><strong>Seconds note.</strong> <kbd class="b">−</kbd> stops at <span class="mono">01</span>. To get <span class="mono">00</span>, press <kbd class="b">+</kbd> at <span class="mono">59</span>.</p></div>
+    </section>
+
+    <section id="bells">
+      <div class="sec-head"><span class="num">6</span><h2>Set a bell</h2></div>
+      <p>There are 15 bells (Bell 01 to Bell 15). Each bell has 4 screens: <b>time</b>, <b>days</b>, <b>duration</b> and <b>output</b>. A bell rings only when all four are set.</p>
+
+      <h3>How to find a bell</h3>
+      <p>Open the menu (you are on Date). Then press <kbd class="b">+</kbd> this many times:</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Bell</th><th class="num">01</th><th class="num">02</th><th class="num">03</th><th class="num">04</th><th class="num">05</th><th class="num">06</th><th class="num">07</th><th class="num">08</th></tr></thead>
+        <tbody><tr><td>Press <kbd class="b">+</kbd></td><td class="num">2</td><td class="num">6</td><td class="num">10</td><td class="num">14</td><td class="num">18</td><td class="num">22</td><td class="num">26</td><td class="num">30</td></tr></tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Bell</th><th class="num">09</th><th class="num">10</th><th class="num">11</th><th class="num">12</th><th class="num">13</th><th class="num">14</th><th class="num">15</th></tr></thead>
+        <tbody><tr><td>Press <kbd class="b">+</kbd></td><td class="num">34</td><td class="num">38</td><td class="num">42</td><td class="num">46</td><td class="num">50</td><td class="num">54</td><td class="num">58</td></tr></tbody>
+      </table></div>
+      <p class="small">Each <kbd class="b">+</kbd> moves one screen. The 4 screens of one bell come one after the other.</p>
+
+      <div class="bellcard">
+        <div class="panel">
+          <h3><span class="k">A.</span> Bell time</h3>
+          <p>The time the bell starts to ring.</p>
+          <ol class="steps">
+            <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>hours</b>.</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>minutes</b>.</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd>. The cursor goes away. Press <kbd class="b">+</kbd> for the next screen.</span></li>
+          </ol>
+        </div>
+        <figure>
+          <div class="lcd" data-l1="Set Bell 01" data-l2="07:30" data-cur="1"></div>
+          <figcaption>Bell 01 rings at 07:30 (24-hour clock).</figcaption>
+        </figure>
+      </div>
+
+      <div class="bellcard">
+        <div class="panel">
+          <h3><span class="k">B.</span> Bell days</h3>
+          <p>The days the bell rings. A <span class="mono">*</span> after a letter means <b>yes, ring on this day</b>. The letters are M T W T F S S (Monday to Sunday).</p>
+          <ol class="steps">
+            <li><span>Press <kbd class="b m">MENU</kbd>. The cursor is at Monday.</span></li>
+            <li><span>Press <kbd class="b">+</kbd> or <kbd class="b">−</kbd> to put the <span class="mono">*</span> on, or to take it off.</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd> to go to the next day. Do this for all 7 days.</span></li>
+            <li><span>After Sunday, press <kbd class="b m">MENU</kbd>. The cursor goes away.</span></li>
+          </ol>
+        </div>
+        <figure>
+          <div class="lcd" data-l1="Bell 01 Days" data-l2="M*T*W*T*F*S S " data-cur="11"></div>
+          <figcaption>Monday to Friday are on. Saturday and Sunday are off. The cursor is at Saturday.</figcaption>
+        </figure>
+      </div>
+
+      <div class="bellcard">
+        <div class="panel">
+          <h3><span class="k">C.</span> Bell duration</h3>
+          <p>How long the bell rings.</p>
+          <ol class="steps">
+            <li><span>Press <kbd class="b m">MENU</kbd>. Change the <b>number</b> (0–239).</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd>. Press <kbd class="b">+</kbd> or <kbd class="b">−</kbd> to switch between <b>Seconds</b> and <b>Minutes</b>.</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd>. The cursor goes away.</span></li>
+          </ol>
+          <div class="box tip"><p><strong>Tip.</strong> A school bell usually rings 5 to 15 seconds. Do not use 0: the bell will ring for only about 1 second, or not at all.</p></div>
+        </div>
+        <figure>
+          <div class="lcd" data-l1="Bell 01 Duration" data-l2="10  Seconds" data-cur="0"></div>
+          <figcaption>Bell 01 rings for 10 seconds.</figcaption>
+        </figure>
+      </div>
+
+      <div class="bellcard">
+        <div class="panel">
+          <h3><span class="k">D.</span> Output relay</h3>
+          <p>This connects the bell to the real bell. <span class="mono">A*</span> means the bell sounds. <span class="mono">A</span> without a star means it is silent.</p>
+          <ol class="steps">
+            <li><span>Press <kbd class="b m">MENU</kbd>. The cursor is at A.</span></li>
+            <li><span>Press <kbd class="b">+</kbd> or <kbd class="b">−</kbd> to put the <span class="mono">*</span> on.</span></li>
+            <li><span>Press <kbd class="b m">MENU</kbd>. The cursor goes away. Press <kbd class="b">+</kbd> for the next bell.</span></li>
+          </ol>
+          <div class="box warn"><p><strong>Do not forget this screen.</strong> Without <span class="mono">A*</span>, the screen shows the bell ringing, but you hear nothing.</p></div>
+        </div>
+        <figure>
+          <div class="lcd" data-l1="Output Relay 01" data-l2="A*" data-cur="1"></div>
+          <figcaption>Relay A is on for Bell 01.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="save">
+      <div class="sec-head"><span class="num">7</span><h2>Save and exit</h2></div>
+      <p>Your changes are saved when you leave the menu. There are two ways to leave:</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Where you are</th><th>Press</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td><b>Date</b> screen (first screen)</td><td><kbd class="b">−</kbd></td><td>Saves everything and goes home.</td></tr>
+          <tr><td><b>Output Relay 15</b> (last screen)</td><td><kbd class="b">+</kbd></td><td>Saves everything and goes home.</td></tr>
+        </tbody>
+      </table></div>
+      <p>The bell settings stay saved when the power is off. The clock keeps running on its own small battery.</p>
+      <div class="box warn">
+        <p><strong>Be careful.</strong></p>
+        <p>If the power goes off while the menu is open, your new changes are lost.</p>
+        <p>Bells do not ring while the menu is open. If you open the menu while a bell is ringing, the bell keeps ringing until you go home. So change settings when no bell is due.</p>
+      </div>
+    </section>
+
+    <section id="example">
+      <div class="sec-head"><span class="num">8</span><h2>Example timetable</h2></div>
+      <p><span class="tag">Example</span> This is a sample school day, Monday to Friday. Change the times to fit your school.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Bell</th><th>For</th><th class="num">Time</th><th>Days</th><th class="num">Duration</th><th>Relay</th></tr></thead>
+        <tbody id="tt"></tbody>
+      </table></div>
+      <p class="small">Bells 11 to 15 are not used here. Leave their days empty.</p>
+    </section>
+
+    <section id="off">
+      <div class="sec-head"><span class="num">9</span><h2>Turn a bell off</h2></div>
+      <p>To stop a bell for a short time (for example in holidays), go to its <b>Days</b> screen and take off all the stars. Or go to its <b>Output Relay</b> screen and take off the star at A.</p>
+      <p>A new timer has all bells at <span class="mono">00:00</span> with no days. These bells never ring.</p>
+      <figure>
+        <div class="lcd" data-l1="Bell 03 Days" data-l2="M T W T F S S "></div>
+        <figcaption>No stars: Bell 03 is off.</figcaption>
+      </figure>
+    </section>
+
+    <section id="problems">
+      <div class="sec-head"><span class="num">10</span><h2>Problems and answers</h2></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Problem</th><th>Check this</th></tr></thead>
+        <tbody>
+          <tr><td>The bell did not ring.</td><td>1. Is today marked with <span class="mono">*</span> on the Days screen?<br>2. Is <span class="mono">A*</span> on the Output Relay screen?<br>3. Is the weekday right on the Date screen?<br>4. Is the duration more than 0?<br>5. Is the timer on the home screen (menu closed)?</td></tr>
+          <tr><td>The screen shows <span class="mono">;A1</span> but there is no sound.</td><td>Relay A is off for that bell. Or the bell wire is not connected.</td></tr>
+          <tr><td>The bell rings on the wrong days.</td><td>The weekday is wrong. Set it on the Date screen (step 5 of <a href="#date">Set the date</a>).</td></tr>
+          <tr><td>The bell rings at the wrong time.</td><td>Check the clock on the home screen. Check the 24-hour time: 2 PM is <span class="mono">14:00</span>, not <span class="mono">02:00</span>.</td></tr>
+          <tr><td>The time is wrong after a power cut.</td><td>The clock battery is weak. Ask a technician to change it. Then set the date and time again.</td></tr>
+          <tr><td>My changes are gone.</td><td>The power went off while the menu was open. Make the changes again and leave the menu to save.</td></tr>
+          <tr><td><kbd class="b">+</kbd> changes a number but does not go to the next screen.</td><td>The cursor is shown, so you are changing values. Press <kbd class="b m">MENU</kbd> until the cursor goes away.</td></tr>
+          <tr><td>The bell keeps ringing.</td><td>Maybe the menu was opened while it rang. Go back to the home screen. Also check the unit: maybe it is Minutes, not Seconds.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="limits">
+      <div class="sec-head"><span class="num">11</span><h2>Limits</h2></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Setting</th><th>Allowed values</th></tr></thead>
+        <tbody>
+          <tr><td>Number of bells</td><td>15</td></tr>
+          <tr><td>Bell time</td><td class="num">00:00 to 23:59</td></tr>
+          <tr><td>Bell days</td><td>Any mix of Mon, Tue, Wed, Thu, Fri, Sat, Sun</td></tr>
+          <tr><td>Duration</td><td>0 to 239, in Seconds or Minutes</td></tr>
+          <tr><td>Output</td><td>1 relay (A)</td></tr>
+          <tr><td>Date</td><td>Day 1–31, month 1–12, year 00–98 (2 digits)</td></tr>
+          <tr><td>Clock</td><td class="num">00:00:00 to 23:59:59 (24-hour)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">A bell cannot ring past midnight. Example: a bell at 23:59 for 5 minutes stops at 00:00.</p>
+    </section>
+
+    <section id="practice">
+      <div class="sec-head"><span class="num">12</span><h2>Practice here</h2></div>
+      <p>This is a practice copy of the timer. The buttons work like the real ones. It starts at 07:29:50 on a Friday, so Bell 01 rings after 10 seconds. Nothing here changes your real timer.</p>
+      <div class="sim">
+        <div class="panel">
+          <div class="lcd" id="simLcd" aria-live="polite"></div>
+          <div class="keys">
+            <button type="button" id="kMinus" aria-label="Minus">−</button>
+            <button type="button" id="kMenu" class="m">MENU</button>
+            <button type="button" id="kPlus" aria-label="Plus">+</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="status">
+            <div><span class="lbl">Bell output</span><span class="lamp" id="lamp">Off</span></div>
+            <div><span class="lbl">Where you are</span><span id="where">Home screen</span></div>
+            <div><span class="lbl">What buttons do</span><span id="mode"></span></div>
+          </div>
+          <div class="toast" id="toast"></div>
+          <p class="small">Try this: press MENU, then + two times to reach Set Bell 01. Press MENU and change the hour. Press MENU until the cursor goes away. Press − to go back to Date, then − again to save.</p>
+          <button type="button" class="link" id="reset">Start the practice again</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tech">
+      <div class="sec-head"><span class="num">13</span><h2>For technicians</h2></div>
+      <p>Connections used by the program (<span class="mono">Final_code.ino</span>):</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Arduino pin</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>MENU button</td><td class="num">D2</td><td>Button to GND. Uses interrupt 0.</td></tr>
+          <tr><td>− button (left)</td><td class="num">D8</td><td>Button to GND. Internal pull-up on.</td></tr>
+          <tr><td>+ button (right)</td><td class="num">D10</td><td>Button to GND. Internal pull-up on.</td></tr>
+          <tr><td>Relay A (bell)</td><td class="num">A1</td><td>HIGH = bell on. LOW = bell off.</td></tr>
+          <tr><td>LCD 16×2</td><td class="num">RS 12, E 11, D4 6, D5 5, D6 4, D7 3</td><td>4-bit mode.</td></tr>
+          <tr><td>Clock DS1307</td><td class="num">I²C (SDA A4, SCL A5 on Uno)</td><td>Address 0x68. Needs a coin battery to keep time.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">Bell settings are kept in EEPROM, 5 bytes per bell (addresses 1–75). Changes are written when the user leaves the menu.</p>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  const pad = n => String(n).padStart(2,'0');
+  function lcdHTML(l1, l2, cur){
+    const rows = [l1, l2].map((t, r) => {
+      const s = (t || '').padEnd(16,' ').slice(0,16);
+      let h = '<div class="row">';
+      for (let i = 0; i < 16; i++){
+        const ch = s[i] === ' ' ? '&nbsp;' : s[i].replace('&','&amp;').replace('<','&lt;');
+        h += '<span class="c' + (r === 1 && i === cur ? ' cur' : '') + '">' + ch + '</span>';
+      }
+      return h + '</div>';
+    });
+    return '<div class="screen">' + rows.join('') + '</div>';
+  }
+  document.querySelectorAll('.lcd[data-l1]').forEach(el => {
+    const cur = el.dataset.cur === undefined ? -1 : Number(el.dataset.cur);
+    el.innerHTML = lcdHTML(el.dataset.l1, el.dataset.l2, cur);
+    if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', 'LCD: ' + el.dataset.l1.trim() + ' / ' + el.dataset.l2.trim());
+  });
+
+  // Example timetable (also loaded into the practice timer)
+  const MF = 0b1111100; // Mon..Fri bits
+  const EX = [
+    ['Morning assembly',7,30,10],['Period 1',7,45,10],['Period 2',8,25,5],['Period 3',9,5,5],
+    ['Break',9,45,15],['Period 4',10,0,10],['Period 5',10,40,5],['Lunch',11,20,15],
+    ['Period 6',12,0,10],['Home time',12,40,20]
+  ];
+  document.getElementById('tt').innerHTML = EX.map((e,i) =>
+    '<tr><td class="num">' + pad(i+1) + '</td><td>' + e[0] + '</td><td class="num">' + pad(e[1]) + ':' + pad(e[2]) +
+    '</td><td>Mon–Fri</td><td class="num">' + e[3] + ' Seconds</td><td>A*</td></tr>').join('');
+
+  // ---- Practice timer: same logic as Final_code.ino ----
+  const DAYS = ['?','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const Z = ['M','T','W','T','F','S','S'];
+  let S;
+  function fresh(){
+    const bells = [];
+    for (let i = 0; i < 15; i++){
+      const e = EX[i];
+      bells.push(e ? {h:e[1], m:e[2], days:MF, dur:e[3], unit:0, relay:1} : {h:0, m:0, days:0, dur:0, unit:0, relay:0});
+    }
+    S = {menu:0, sub:0, cur:-1, dd:false, od:false,
+         rtc:{s:50, m:29, h:7, dow:5, d:20, mo:11, y:26}, t:null,
+         bells, ring:false, ringLine:'', relay:0};
+    S.t = Object.assign({}, S.rtc);
+  }
+  const timeStr = t => pad(t.h)+':'+pad(t.m)+':'+pad(t.s);
+  const dateStr = t => pad(t.d)+'.'+pad(t.mo)+'.'+pad(t.y);
+  const dim = (mo,y) => [31,(y%4===0?29:28),31,30,31,30,31,31,30,31,30,31][mo-1] || 31;
+
+  function rtcTick(){
+    const r = S.rtc;
+    if (++r.s < 60) return; r.s = 0;
+    if (++r.m < 60) return; r.m = 0;
+    if (++r.h < 24) return; r.h = 0;
+    r.dow = r.dow % 7 + 1;
+    if (++r.d > dim(r.mo, r.y)){ r.d = 1; if (++r.mo > 12){ r.mo = 1; r.y = (r.y + 1) % 100; } }
+  }
+  function checkAlarms(){
+    const t = S.t, v = t.h*3600 + t.m*60 + t.s;
+    let ring = false, line = timeStr(t) + ';A', ttf = 0, unit = 0, relay = 0;
+    S.bells.forEach((b,i) => {
+      const mn = b.h*3600 + b.m*60, mx = mn + (b.unit ? 60 : 1) * b.dur;
+      if (v >= mn && v <= mx && ((1 << (7 - t.dow)) & b.days)){
+        ring = true;
+        if ((ttf === 0 && mx - v > ttf) || (mx - v < ttf)){
+          unit = b.unit;
+          if (unit && mx - v >= 60) ttf = Math.floor((mx - v)/60); else { ttf = mx - v; unit = 0; }
+        }
+        if (b.relay & 1) relay = 1;
+        if (line.length < 11) line += (i+1);
+      }
+    });
+    if (ring) line += ' ' + ttf + (unit ? 'm' : 's');
+    S.ring = ring; S.ringLine = line; S.relay = relay;
+  }
+  function screen(){
+    const p = S.menu, t = S.t;
+    if (p === 1) return ['Date', dateStr(t) + ' ' + (DAYS[t.dow] || '?')];
+    if (p === 2) return ['Time', timeStr(t)];
+    if ((p+1) % 4 === 0){ const n=(p+1)/4, b=S.bells[n-1]; return ['Set Bell '+pad(n), pad(b.h)+':'+pad(b.m)]; }
+    if (p % 4 === 0){ const n=p/4, b=S.bells[n-1]; let s='M'; for (let i=6;i>=0;i--){ s += (b.days & (1<<i)) ? '*' : ' '; if (i>0) s += Z[7-i]; } return ['Bell '+pad(n)+' Days', s]; }
+    if ((p-1) % 4 === 0){ const n=(p-1)/4, b=S.bells[n-1]; return ['Bell '+pad(n)+' Duration', b.dur + '  ' + (b.unit ? 'Minutes' : 'Seconds')]; }
+    const n=(p-2)/4, b=S.bells[n-1]; return ['Output Relay '+pad(n), 'A' + ((b.relay & 1) ? '*' : ' ')];
+  }
+  function kind(){
+    const p = S.menu;
+    if (p === 1) return 'date'; if (p === 2) return 'time';
+    if ((p+1)%4===0) return 'btime'; if (p%4===0) return 'days'; if ((p-1)%4===0) return 'dur'; return 'relay';
+  }
+  function subCursor(){
+    const k = kind(), s = S.sub;
+    let c = -1;
+    if (k === 'date' || k === 'time'){ c = {1:1,2:4,3:7}[s]; if (c === undefined) c = (s === 4 && k === 'date') ? 12 : -1; }
+    else if (k === 'btime'){ c = s === 1 ? 1 : s === 2 ? 4 : -1; }
+    else if (k === 'days'){ c = (s > 0 && s < 8) ? s*2-1 : -1; }
+    else if (k === 'dur'){ c = s === 1 ? 0 : s === 2 ? 4 : -1; }
+    else { c = s === 1 ? 1 : -1; }
+    if (c === -1) S.sub = 0;
+    S.cur = c;
+  }
+  function bellNo(){ const k=kind(), p=S.menu; return k==='btime'?(p+1)/4:k==='days'?p/4:k==='dur'?(p-1)/4:(p-2)/4; }
+  function adjust(dir){
+    const k = kind(), s = S.sub, t = S.t;
+    if (k === 'date'){
+      if (dir < 0){ if (s===1 && t.d>1) t.d--; else if (s===2 && t.mo>1) t.mo--; else if (s===3 && t.y>1) t.y--; else if (s===4 && t.dow>1) t.dow--; }
+      else { if (s===1) t.d=(t.d+1)%32||1; else if (s===2) t.mo=(t.mo+1)%13||1; else if (s===3) t.y=(t.y+1)%99; else if (s===4) t.dow=(t.dow+1)%8||1; }
+      S.dd = true; return;
+    }
+    if (k === 'time'){
+      if (dir < 0){ if (s===1 && t.h>0) t.h--; else if (s===2 && t.m>0) t.m--; else if (s===3 && t.s>1) t.s--; }
+      else { if (s===1) t.h=(t.h+1)%24; else if (s===2) t.m=(t.m+1)%60; else if (s===3) t.s=(t.s+1)%60; }
+      S.od = true; return;
+    }
+    const b = S.bells[bellNo()-1];
+    if (k === 'btime'){
+      if (dir < 0){ if (s===1 && b.h>0) b.h--; else if (s===2 && b.m>0) b.m--; }
+      else { if (s===1) b.h=(b.h+1)%24; else if (s===2) b.m=(b.m+1)%60; }
+    } else if (k === 'days'){ b.days ^= (1 << (7 - s)); }
+    else if (k === 'dur'){
+      if (s === 1){ if (dir < 0){ if (b.dur > 0) b.dur--; } else b.dur = (b.dur+1) % 240; }
+      else if (s === 2) b.unit = (b.unit+1) % 2;
+    } else { b.relay ^= 1; }
+  }
+  function apply(){
+    if (S.od) S.rtc = Object.assign({}, S.t);
+    else if (S.dd){ S.rtc.d = S.t.d; S.rtc.dow = S.t.dow; S.rtc.mo = S.t.mo; S.rtc.y = S.t.y; }
+    S.dd = S.od = false;
+    toast('Saved. Back on the home screen.');
+  }
+  let toastTimer;
+  function toast(msg){
+    const el = document.getElementById('toast'); el.textContent = msg;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.textContent = '', 3000);
+  }
+  const FIELDS = {date:['day','month','year','weekday'], time:['hours','minutes','seconds'], btime:['hours','minutes'],
+    days:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], dur:['number','unit (Seconds / Minutes)'], relay:['relay A']};
+  const NAMES = {btime:'time', days:'days', dur:'duration', relay:'output'};
+  function render(){
+    let l1, l2, cur = -1;
+    if (S.menu === 0){
+      l1 = (DAYS[S.t.dow] || '?').padEnd(8,' ') + dateStr(S.t);
+      l2 = S.ring ? S.ringLine : '    ' + timeStr(S.t);
+    } else { [l1, l2] = screen(); cur = S.sub > 0 ? S.cur : -1; }
+    document.getElementById('simLcd').innerHTML = lcdHTML(l1, l2, cur);
+    const lamp = document.getElementById('lamp');
+    lamp.classList.toggle('on', !!S.relay); lamp.textContent = S.relay ? 'On (ringing)' : 'Off';
+    const k = S.menu ? kind() : null;
+    document.getElementById('where').textContent = S.menu === 0 ? 'Home screen' :
+      (k === 'date' ? 'Date' : k === 'time' ? 'Time' : 'Bell ' + pad(bellNo()) + ': ' + NAMES[k]) + ' (screen ' + S.menu + ' of 62)';
+    document.getElementById('mode').textContent = S.menu === 0 ? 'MENU opens the menu.' :
+      S.sub > 0 ? 'Changing the ' + FIELDS[k][S.sub-1] + '. + / − change it. MENU goes to the next value.' :
+      '+ next screen, − previous screen, MENU start changing.';
+  }
+  function tick(){
+    if (S.menu === 0){ rtcTick(); S.t = Object.assign({}, S.rtc); checkAlarms(); }
+    render();
+  }
+  document.getElementById('kMenu').addEventListener('click', () => {
+    if (S.menu === 0){ S.menu = 1; S.sub = 0; }
+    else { S.sub++; subCursor(); }
+    render();
+  });
+  document.getElementById('kMinus').addEventListener('click', () => {
+    if (S.menu === 0) return;
+    if (S.sub) adjust(-1);
+    else { if (S.menu === 1) apply(); S.menu--; if (S.menu === 0){ S.t = Object.assign({}, S.rtc); } }
+    render();
+  });
+  document.getElementById('kPlus').addEventListener('click', () => {
+    if (S.menu === 0) return;
+    if (S.sub) adjust(1);
+    else if (S.menu < 62) S.menu++;
+    else { apply(); S.menu = 0; S.t = Object.assign({}, S.rtc); }
+    render();
+  });
+  document.getElementById('reset').addEventListener('click', () => { fresh(); render(); toast('Practice started again.'); });
+  fresh(); render(); setInterval(tick, 1000);
+})();
+</script>
+
+</body></html>
